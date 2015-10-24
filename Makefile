@@ -1,6 +1,8 @@
 all: htop
 
-htop: g++ screen.o -o htop
+htop: 
+	g++ screen.o -o htop
 
-clean: 	rm -f *.o htop
+clean: 	
+	rm -f *.o htop
 
