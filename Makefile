@@ -1,6 +1,6 @@
 all: htop
-htop: 
+htop:
 	g++ main.cpp -o htop
-clean: 	
+clean:
 	rm -f *.o htop
 

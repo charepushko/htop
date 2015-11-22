@@ -24,8 +24,6 @@ bool cmpname(Process s1, Process s2) {
 }
 
 
-
-
 int main() {
 
 	string path = "/proc";
