@@ -132,7 +132,6 @@ unsigned long int cursor_pid;
 int count1 = 0;
 
 int render() {
-            initscr();
 	    clear();
             unsigned int row, col;
             if (!has_colors()) {
@@ -173,11 +172,12 @@ int render() {
 				mvprintw(i+3, j, "%c", ' ');
 			}
 		}
+                    mvprintw(i+3, 52, "%s", list[i].cmdline.data());
+                    mvprintw(i+3, 0, "%s", "                     ");
                     mvprintw(i+3, 1, "%lu", list[i].pid);
                     mvprintw(i+3, 11, "%s", list[i].name.data());
                     mvprintw(i+3, 31, "%c", list[i].status);
                     mvprintw(i+3, 37, "%lu", list[i].virt);
-                    mvprintw(i+3, 52, "%s", list[i].cmdline.data());
 		if (i == cursor) {
 			attroff(COLOR_PAIR(3));
 			attron(COLOR_PAIR(1));
@@ -239,6 +239,8 @@ void to_kill() {
 bool closer = 0;
 
 int main() {
+        initscr();
+//	scrollok(stdscr, TRUE);
 	keypad(stdscr, TRUE);
         noecho();
 
@@ -272,6 +274,7 @@ int main() {
 
 		    case 'w':
 		    case KEY_UP:  if(cursor > 0) { cursor--; } break;
+
 		    case 's':
 		    case KEY_DOWN:  if(cursor < list.size()-1) { cursor++; } break;
 
