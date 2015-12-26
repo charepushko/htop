@@ -146,6 +146,25 @@ int render() {
             attron(COLOR_PAIR(1));
             wbkgd(stdscr, COLOR_PAIR(1));
             attroff(COLOR_PAIR(1));
+
+            init_pair(6, COLOR_BLACK, COLOR_YELLOW);
+            init_pair(7, COLOR_MAGENTA, COLOR_YELLOW);
+	    attron(COLOR_PAIR(6));
+		mvprintw(0, 0, "%s", "  INFO  STOP  KILL  sort by: NAME PID CMDLINE VIRTMEM  QUIT   ");
+	    attroff(COLOR_PAIR(6));
+	    attron(COLOR_PAIR(7));
+		mvprintw(0, 2, "%c", 'I');
+		mvprintw(0, 8, "%c", 'S');
+		mvprintw(0, 14, "%c", 'K');
+		mvprintw(0, 29, "%c", 'N');
+		mvprintw(0, 34, "%c", 'P');
+		mvprintw(0, 38, "%c", 'C');
+		mvprintw(0, 46, "%c", 'V');
+		mvprintw(0, 55, "%c", 'Q');
+	    attroff(COLOR_PAIR(7));
+
+
+
             attron(COLOR_PAIR(2));
 			for (int j = 0; j < col; j++) {
 				mvprintw(2, j, "%c", ' ');
@@ -360,7 +379,7 @@ int main() {
                     case 'c': curr_fl = CMD; break;
 
 		    case 'k': to_kill(); break;
-		    case 't': pause_resume(); break;
+		    case 's': pause_resume(); break;
 		    case 'i': process_info(); break;
 
 		    case KEY_UP:  if(cursor > 0) {
