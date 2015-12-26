@@ -115,8 +115,6 @@ int process_list() {
             stat.close();
         }
     }
-
-
             switch(curr_fl) {
                 case PID: sort(list.begin(), list.end(), cmppid); break;
                 case NAME: sort(list.begin(), list.end(), cmpname); break;
@@ -159,8 +157,8 @@ int render() {
                         mvprintw(2, 52, "%s", "COMMAND LINE");
             attroff(COLOR_PAIR(2));
             attron(COLOR_PAIR(1));
-mvprintw(1, 18, "%d", shift);
-mvprintw(1, 23, "%d", cursor);
+//mvprintw(1, 18, "%d", shift);
+//mvprintw(1, 23, "%d", cursor);
             unsigned n;
             if (row < list.size()) {
 	            n = row-3;
@@ -193,84 +191,101 @@ mvprintw(1, 23, "%d", cursor);
             refresh();
 }
 
-void help() {
-            clear();
-            unsigned int col;
-            if (!has_colors()) {
-                endwin();
-                printf("color fail");
-            }
-            start_color();
-            init_pair(1, COLOR_WHITE, COLOR_BLUE);
-            init_pair(2, COLOR_YELLOW, COLOR_BLACK);
-            getmaxyx(stdscr, row, col);
-            attron(COLOR_PAIR(1));
-            wbkgd(stdscr, COLOR_PAIR(1));
-            attroff(COLOR_PAIR(1));
-            attron(COLOR_PAIR(2));
 
-	
-}
 
 int process_info() {
-    string path = "/proc/" + to_string(cursor_pid);
+    string path = "/proc";
         DIR* fld = opendir(path.data());
 
     if (fld == NULL) {
         return 1;
     }
-	int col;
-	getmaxyx(stdscr, row, col);
-	attron(COLOR_PAIR(2));
+    while(struct dirent* dir = readdir(fld)) {
+        string new_name(dir->d_name);
+        string new_path =  path + '/' + new_name;
+        struct stat well;
+        if ((lstat(new_path.data(), &well) == 0) && (S_ISDIR(well.st_mode)) && (new_name != ".") && (new_name != "..") && (atoi(new_name.data()) > 0)) {
+            string well;
 
-	for (int i = 2; i < row-2; i++) {
-		for (int j = 3; j < col-3; j++) {
-			mvprintw(i, j, "%c", ' ');
-		}
-	}
-	mvprintw(3, col/2-10, "%s", "PROCESS INFORMATION");
+            ifstream stat (new_path + "/" + "stat");
+            stat >> well;
 
-	attroff(COLOR_PAIR(2));
-	init_pair(5, COLOR_WHITE, COLOR_BLACK);
-	attron(COLOR_PAIR(5));
+//mvprintw(1, 25, "%d", cursor_pid);
+//mvprintw(1, 35, "%d", atoi(well.data()));
 
-	int array[12] = {0, 1, 2, 4, 5, 7, 8, 9, 12, 17, 23, 24};
-	int r = 0;
+            stat.close();
 
-	int n;
-	if (row >= 35) { n = 25; } else { n = row-9; }
+            if (cursor_pid == atoi(well.data())) {
 
-        ifstream status (path + "/" + "status");
-        string well;
-	for (int i = 5; i < n; i++) {
-          status >> well;
-//            getline(status, well);
-	    if (i == array[r]) {
-		mvprintw(i, 4, "%s", well.data());
-		r++;
+// mvprintw(1, 45, "%d", 1);
+
+
+	        int col;
+	        getmaxyx(stdscr, row, col);
+	        attron(COLOR_PAIR(2));
+
+	        for (int i = 2; i < row-2; i++) {
+	                for (int j = 3; j < col-3; j++) {
+	                        mvprintw(i, j, "%c", ' ');
+	                }
+	        }
+	        mvprintw(3, col/2-10, "%s", "PROCESS INFORMATION");
+
+	        attroff(COLOR_PAIR(2));
+	        init_pair(5, COLOR_WHITE, COLOR_BLACK);
+	        attron(COLOR_PAIR(5));
+
+	        int array[12] = {0, 1, 2, 4, 5, 7, 8, 9, 12, 17, 23, 24};
+	        int r = 0;
+		int roww = 5;
+	        int n;
+	        if (row >= 35) { n = 25; } else { n = row-9; }
+
+	        ifstream status (new_path + "/" + "status");
+	        string well1 = "hey";
+	        for (int i = 0; i < n; i++) {
+//	          status >> well1;
+	          getline(status, well1);
+	            if (i == array[r]) {
+	                mvprintw(roww, 6, "%s", well1.data());
+	                r++;
+			roww++;
+	            }
+	        }
+	        attroff(COLOR_PAIR(5));
+	        attron(COLOR_PAIR(3));
+	        mvprintw(row-4, col/2-4, "%s", "  Okay  ");
+
+	        getch();
+
+	            status.close();
+
+	        attroff(COLOR_PAIR(3));
+		break;
+
 	    }
+
 	}
-	attroff(COLOR_PAIR(5));
-	attron(COLOR_PAIR(3));
-	mvprintw(row-4, col/2-4, "%s", "  Okay  ");
-
-	getch();
-
-            status.close();
-
-	attroff(COLOR_PAIR(3));
-
-
+    }
     closedir(fld);
+
 }
+
+
+
+
+
+
 
 
 void pause_resume() {
 	Process well = get_proc(cursor_pid);
 	if (well.status == 'T') {
 		kill(cursor_pid, SIGCONT);
+		sleep(1);
 	} else {
 		kill(cursor_pid, SIGSTOP);
+		sleep(1);
 	}
 }
 
@@ -372,7 +387,7 @@ int main() {
 
             render();
 
-            usleep(10000);
+            usleep(100000);
         }
     echo();
     endwin();
