@@ -130,10 +130,12 @@ int process_list() {
 int cursor = 3;
 unsigned long int cursor_pid;
 int count1 = 0;
+int shift = 0;
+unsigned int row;
 
 int render() {
 	    clear();
-            unsigned int row, col;
+            unsigned int col;
             if (!has_colors()) {
                 endwin();
                 printf("color fail");
@@ -157,28 +159,29 @@ int render() {
                         mvprintw(2, 52, "%s", "COMMAND LINE");
             attroff(COLOR_PAIR(2));
             attron(COLOR_PAIR(1));
-//mvprintw(1, 18, "%d", count1);
+mvprintw(1, 18, "%d", shift);
+mvprintw(1, 23, "%d", cursor);
             unsigned n;
             if (row < list.size()) {
-            n = row-3;
-            } else { n = list.size()-3; }
+	            n = row-3;
+            } else { n = list.size(); }
 
 	    init_pair(3, COLOR_BLACK, COLOR_GREEN);
-            for (unsigned int i = 0; i < list.size(); i++) {
-		if (i == cursor) {
+            for (unsigned int i = 0; i < n; i++) {
+		if (list[i+shift].pid == cursor_pid) {
 			attron(COLOR_PAIR(3));
-			cursor_pid = list[i].pid;
+//			cursor_pid = list[i].pid;
 			for (int j = 0; j < col; j++){
 				mvprintw(i+3, j, "%c", ' ');
 			}
 		}
-                    mvprintw(i+3, 52, "%s", list[i].cmdline.data());
+                    mvprintw(i+3, 52, "%s", list[i+shift].cmdline.data());
                     mvprintw(i+3, 0, "%s", "                     ");
-                    mvprintw(i+3, 1, "%lu", list[i].pid);
-                    mvprintw(i+3, 11, "%s", list[i].name.data());
-                    mvprintw(i+3, 31, "%c", list[i].status);
-                    mvprintw(i+3, 37, "%lu", list[i].virt);
-		if (i == cursor) {
+                    mvprintw(i+3, 1, "%lu", list[i+shift].pid);
+                    mvprintw(i+3, 11, "%s", list[i+shift].name.data());
+                    mvprintw(i+3, 31, "%c", list[i+shift].status);
+                    mvprintw(i+3, 37, "%lu", list[i+shift].virt);
+		if (list[i+shift].pid == cursor_pid) {
 			attroff(COLOR_PAIR(3));
 			attron(COLOR_PAIR(1));
 		}
@@ -189,6 +192,78 @@ int render() {
             attroff(COLOR_PAIR(1));
             refresh();
 }
+
+void help() {
+            clear();
+            unsigned int col;
+            if (!has_colors()) {
+                endwin();
+                printf("color fail");
+            }
+            start_color();
+            init_pair(1, COLOR_WHITE, COLOR_BLUE);
+            init_pair(2, COLOR_YELLOW, COLOR_BLACK);
+            getmaxyx(stdscr, row, col);
+            attron(COLOR_PAIR(1));
+            wbkgd(stdscr, COLOR_PAIR(1));
+            attroff(COLOR_PAIR(1));
+            attron(COLOR_PAIR(2));
+
+	
+}
+
+int process_info() {
+    string path = "/proc/" + to_string(cursor_pid);
+        DIR* fld = opendir(path.data());
+
+    if (fld == NULL) {
+        return 1;
+    }
+	int col;
+	getmaxyx(stdscr, row, col);
+	attron(COLOR_PAIR(2));
+
+	for (int i = 2; i < row-2; i++) {
+		for (int j = 3; j < col-3; j++) {
+			mvprintw(i, j, "%c", ' ');
+		}
+	}
+	mvprintw(3, col/2-10, "%s", "PROCESS INFORMATION");
+
+	attroff(COLOR_PAIR(2));
+	init_pair(5, COLOR_WHITE, COLOR_BLACK);
+	attron(COLOR_PAIR(5));
+
+	int array[12] = {0, 1, 2, 4, 5, 7, 8, 9, 12, 17, 23, 24};
+	int r = 0;
+
+	int n;
+	if (row >= 35) { n = 25; } else { n = row-9; }
+
+        ifstream status (path + "/" + "status");
+        string well;
+	for (int i = 5; i < n; i++) {
+          status >> well;
+//            getline(status, well);
+	    if (i == array[r]) {
+		mvprintw(i, 4, "%s", well.data());
+		r++;
+	    }
+	}
+	attroff(COLOR_PAIR(5));
+	attron(COLOR_PAIR(3));
+	mvprintw(row-4, col/2-4, "%s", "  Okay  ");
+
+	getch();
+
+            status.close();
+
+	attroff(COLOR_PAIR(3));
+
+
+    closedir(fld);
+}
+
 
 void pause_resume() {
 	Process well = get_proc(cursor_pid);
@@ -261,7 +336,7 @@ int main() {
             count1++;
             process_list();
             if(getval){
-                char ch = getch();
+                int ch = getch();
 
                 switch(ch) {
                     case 'p': curr_fl = PID; break;
@@ -271,12 +346,23 @@ int main() {
 
 		    case 'k': to_kill(); break;
 		    case 't': pause_resume(); break;
+		    case 'i': process_info(); break;
 
-		    case 'w':
-		    case KEY_UP:  if(cursor > 0) { cursor--; } break;
+		    case KEY_UP:  if(cursor > 0) {
+					if ((cursor == shift) && (shift > 0)) {
+						shift -= 1;
+					}
+					cursor--;
+					cursor_pid = list[cursor].pid;
+				} break;
 
-		    case 's':
-		    case KEY_DOWN:  if(cursor < list.size()-1) { cursor++; } break;
+		    case KEY_DOWN:  if(cursor < list.size()-1) {
+					if ((cursor + 5 > row) && (shift < (list.size() - row + 3))) {
+						shift++;
+					}
+					cursor++;
+					cursor_pid = list[cursor].pid;
+				} break;
 
                     case 'q': closer = 1;  break;
                     default: break;
@@ -286,7 +372,7 @@ int main() {
 
             render();
 
-            usleep(100000);
+            usleep(10000);
         }
     echo();
     endwin();
